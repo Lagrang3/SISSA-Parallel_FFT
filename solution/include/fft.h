@@ -2,9 +2,9 @@
 #define FFT_H
 
 #include <vector>
+#include <complex>
 #include <cassert>
 #include "mint.h"
-
 
 /*
 	Brute force implementation of the Discrete Fourier transform.
@@ -87,15 +87,14 @@ std::vector<T> FFT_Iterative(const std::vector<T>& A,const T e,const T _1 = T(1)
 		if(i<j)
 			std::swap(B[i],B[j]);
 	}
-	
 	for(int len=2,k=1;len<=n;len<<=1,++k){
 		for(int i=0;i<n;i+=len){
 			T ej=_1;
 			for(int j=0;j<len/2;++j){
 				int u=i+j, v=i+j+len/2;
-				T Bu = B[u],Bv=B[v];
-				B[u]=Bu + Bv*ej;
-				B[v]=Bu + Bv*ej*f;
+				T Bu = B[u],Bv=B[v]*ej;
+				B[u]=Bu + Bv;
+				B[v]=Bu + Bv*f;
 				ej*=e2[k];
 			}
 		}

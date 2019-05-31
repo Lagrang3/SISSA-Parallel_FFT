@@ -12,6 +12,7 @@ foreach _t : _tests
 
 	test('FFT_DivideAndConquer Inverse '+_t,
 		jury,
-		args: [test_fft.full_path(),_prefix+'/'+_t+'.in'])
+		args: [test_fft.full_path(),_prefix+'/'+_t+'.in'],
+		is_parallel: false)
 		
 endforeach

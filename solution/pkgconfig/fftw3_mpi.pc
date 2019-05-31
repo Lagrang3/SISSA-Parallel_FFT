@@ -1,0 +1,12 @@
+prefix=/u/shared/programs/x86_64/fftw/3.3.4/gnu/4.9.2
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: FFTW-MPI
+Description: fast Fourier transform library
+Version: 3.3.4
+Libs: -L${libdir} -lfftw3_mpi 
+Libs.private: -lm
+Cflags: -I${includedir}
+
