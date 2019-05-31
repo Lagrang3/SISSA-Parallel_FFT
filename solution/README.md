@@ -14,8 +14,11 @@ derivatives (gradients and divergences),
 ## Achievements
 
 - We have implemented three 1-dimensional Fourier transform functions:
-one using brute force, and two based on the FFT Divide and Conquer approach,
-one recursive and the other one not;
+one using brute force `FFT_BruteForce`, and two based on the 
+FFT Divide and Conquer approach,
+one recursive `FFT_DivideAndConquer` and the other one which 
+is not recursive and uses less memory allocation `FFT_Iterative`.
+
 - The three aforementioned functions are templated on any class 
 that implements the concept of an algebraic ring. 
 This allows to use this functions either for complex numbers 
@@ -23,4 +26,11 @@ at any precision eg. `complex<double>` or `complex<long double>`,
 or modular integers (Number Theoretical Fourier Transform: 
 http://mathworld.wolfram.com/NumberTheoreticTransform.html)
 or even non-commutative objects like matrices eg. `complex<matrix>`.
+
 - Unit tests to check the validity of the the FT implementations are provided.
+
+- Added a wrapper for FFTW3. In the unit test suite the most 
+extreme case asks to compute one forward and one backward Fourier transform
+on a complex array of *N=10^6* elements.
+This task is performed in 3.23 seconds using the `FFT_Iterative`,
+compared to 2.58 seconds employed by `FFTW3` (the FFTW wrapper).
