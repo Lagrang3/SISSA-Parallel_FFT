@@ -10,6 +10,11 @@ mpi_dep = dependency('mpi',language: 'cpp')
 
 subdir('tests')
 
-exe = executable('main.x','main.cpp',
+exe_fftw = executable('diffusion_fftw.x','main.cpp',
 	dependencies: [fftw3_dep,mpi_dep,fftw3_mpi_dep],
+	cpp_args: ['-DFFTW'],
+	include_directories: inc)
+
+exe_myfft = executable('diffusion.x','main.cpp',
+	dependencies: [mpi_dep],
 	include_directories: inc)

@@ -10,10 +10,11 @@ int main(int narg,char** args){
 	mpi_handler mpi;	
 	mpi_comm com = mpi.get_com();
 	
+	const int nc=1<<6; //64 cells per dimension
 	
 	diffusion D(
 		mpi.get_com(),
-		48 /* nx */,48 /* ny */,96/* nz */);
+		nc /* nx */,nc /* ny */,nc/* nz */);
 	
 	D.initialize();
 	

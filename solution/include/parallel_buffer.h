@@ -5,9 +5,18 @@
 #include <valarray>
 #include <memory>
 #include <algorithm>
-#include "mpi_handler.h"
 #include <iostream>
 #include <cassert>
+#include "fft.h"
+#include "mpi_handler.h"
+
+#define for_xyz(i,j,k,nloc) \
+	for(size_t i=0;i<nloc[0];++i)\
+	for(size_t j=0;j<nloc[1];++j)\
+	for(size_t k=0;k<nloc[2];++k)
+
+#define _index(i,j,k,nloc) \
+	k+nloc[2]*(j+nloc[1]*i)
 
 template<class T>
 class parallel_buff_3D : public std::valarray<T> {
@@ -20,6 +29,7 @@ class parallel_buff_3D : public std::valarray<T> {
 	public:
 	
 	using std::valarray<T>::operator=;
+	using std::valarray<T>::operator*=;
 	
 	parallel_buff_3D(const mpi_comm& in_com,const std::array<size_t,3>& n):
 		com(in_com),
@@ -33,10 +43,10 @@ class parallel_buff_3D : public std::valarray<T> {
 	}
 	
 	T& operator() (size_t x,size_t y,size_t z){
-		return (*this)[ (x*N_loc[1] + y)*N_loc[2] + z  ];
+		return (*this)[ _index(x,y,z,N_loc)  ];
 	}
 	const T& operator() (size_t x,size_t y,size_t z)const{
-		return (*this)[ (x*N_loc[1] + y)*N_loc[2] + z  ];
+		return (*this)[ _index(x,y,z,N_loc)  ];
 	}
 	
 	auto get_nloc()const{return N_loc;}
@@ -50,6 +60,30 @@ class parallel_buff_3D : public std::valarray<T> {
 		return std::valarray<T>::size();
 	}
 	T sum()const;
+	
+	void transpose_yz(){
+		std::valarray<T> tmp(get_local_size());
+		std::array<size_t,3> nloc{N_loc[0],N_loc[2],N_loc[1]};
+		
+		for_xyz(i,j,k,N_loc)
+			tmp[_index(i,k,j,nloc)] = (*this)[_index(i,j,k,N_loc)];
+		
+		N_loc=nloc;
+		(*this)=std::move(tmp);
+	}
+	void transpose_xz(){
+		std::valarray<T> tmp(get_local_size());
+		std::array<size_t,3> nloc{N_loc[2],N_loc[1],N_loc[0]};
+		
+		for_xyz(i,j,k,N_loc)
+			tmp[_index(k,j,i,nloc)] = (*this)[_index(i,j,k,N_loc)];
+		
+		N_loc=nloc;
+		(*this)=std::move(tmp);
+		
+		
+		// todo: communication
+	}
 };
 
 template<class T>
@@ -72,6 +106,31 @@ double parallel_buff_3D<double>::sum()const{
 	s_loc = std::valarray<double>::sum();
 	MPI_Allreduce(&s_loc,&s_tot,1,MPI_DOUBLE,MPI_SUM,com.get_com());
 	return s_tot;
+}
+
+template<class T>
+void FFT3D(parallel_buff_3D<T>& A,const T e,const T _1=T(1)){
+	// FFT on z
+	auto nloc = A.get_nloc();
+	for(size_t i=0;i<nloc[0];++i)	
+	for(size_t j=0;j<nloc[1];++j)
+		FFT(&A(i,j,0),&A(i,j+1,0),e,_1);
+	
+	// FFT on y
+	A.transpose_yz();
+	nloc = A.get_nloc();
+	for(size_t i=0;i<nloc[0];++i)	
+	for(size_t j=0;j<nloc[1];++j)
+		FFT(&A(i,j,0),&A(i,j+1,0),e,_1);
+	A.transpose_yz();
+	
+	// FFT on x
+	A.transpose_xz();
+	nloc = A.get_nloc();
+	for(size_t i=0;i<nloc[0];++i)	
+	for(size_t j=0;j<nloc[1];++j)
+		FFT(&A(i,j,0),&A(i,j+1,0),e,_1);
+	A.transpose_xz();
 }
 
 #endif

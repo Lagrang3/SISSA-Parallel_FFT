@@ -7,7 +7,10 @@
 #include <cmath>
 #include <complex>
 #include "parallel_buffer.h"
-#include <fftw3-mpi.h>
+
+#ifdef FFTW
+	#include <fftw3-mpi.h>
+#endif
 
 #define for_xyz(i,j,k,nloc) \
 	for(size_t i=0;i<nloc[0];++i)\
@@ -27,12 +30,13 @@ class diffusion {
 	double rad_diff = 0.7,rad_conc=0.6,ss;
 	parallel_buff_3D<double> conc,diffusivity;
 	const double vol_cell;
-	const double pi=acos(-1.0);
-		
+	const double PI=acos(-1.0);
+	
+#ifdef FFTW	
 	fftw_plan fplan,bplan;
 	fftw_complex *data;
 	ptrdiff_t alloc_local,fftw_N[3],fftw_nloc,fftw_ploc;
-
+#endif
 	
 
 	diffusion(const mpi_comm& in_com,
@@ -41,6 +45,8 @@ class diffusion {
 		conc(com,N),diffusivity(com,N),
 		vol_cell{L[0]*L[1]*L[2]/N[0]/N[1]/N[2]}
 	{
+
+#ifdef FFTW
 		fftw_mpi_init();
 		for(int i=0;i<3;++i)fftw_N[i]=N[i];
 		
@@ -58,13 +64,15 @@ class diffusion {
 		bplan = fftw_mpi_plan_dft_3d(
 			fftw_N[0],fftw_N[1],fftw_N[2],data,data,
 			com.get_com(),FFTW_BACKWARD,FFTW_ESTIMATE);
-		
+#endif		
 	}
 	
 	~diffusion(){
+#ifdef FFTW
 		fftw_free(data);
 		fftw_destroy_plan(fplan);
 		fftw_destroy_plan(bplan);
+#endif
 	}
 	
 	void initialize()
@@ -109,29 +117,32 @@ class diffusion {
 		ss = conc.sum() * vol_cell;
 	}
 
-	auto derivative(int dir,const parallel_buff_3D<double>& F){
+	parallel_buff_3D<double> derivative(int dir,const parallel_buff_3D<double>& F){
 		
 		const std::complex<double> I{0,1};
-		const double G = 2*pi/L[dir];
-		
+		const double G = 2*PI/L[dir];
+		parallel_buff_3D< double > dF(com,N);
+		double fac = 1/(N[0]*double(N[1])*N[2]);
 		size_t Ntot = F.get_local_size();
 		
+		
+#ifdef FFTW	
+		// transform forwards
 		for(size_t i=0;i<Ntot;++i){
 			data[i][0]=F[i];
 			data[i][1]=0;
 		}
-		
 		std::array<size_t,3> 
 			nloc{fftw_nloc,fftw_N[1],fftw_N[2]},
-			ploc{fftw_ploc,0,0};	
-		
-		
+			ploc{fftw_ploc,0,0};		
 		fftw_execute(fplan);
+		
+		//compute derivative in Fourier space
 		for_xyz(i,j,k,nloc){
 			std::array<size_t,3> 
 				p{i+ploc[0],j+ploc[1],k+ploc[2]};
 				
-			size_t index = (i*nloc[1]+j)*nloc[2]+k;
+			size_t index = _index(i,j,k,nloc);
 			
 			std::complex<double> d{data[index][0],data[index][1]};
 			d *=  G*I*
@@ -140,17 +151,37 @@ class diffusion {
 			data[index][0]=d.real();
 			data[index][1]=d.imag();
 		}
-		fftw_execute(bplan);
 		
+		// transform backwards
+		fftw_execute(bplan);		
+		for(size_t i=0;i<Ntot;++i)dF[i]=data[i][0];
+#else
 		
-		parallel_buff_3D<double> dF(com,N);
+		// transform forwards
+		parallel_buff_3D< std::complex<double>  > data(com,N);
+		for(size_t i=0;i<Ntot;++i)data[i] = F[i];
+		FFT3D(data, std::complex<double> (cos(2*PI/N[0]),sin(2*PI/N[0])));
 		
-		double fac = 1/(N[0]*double(N[1])*N[2]);
+		std::array<size_t,3> 
+			nloc(F.get_nloc()),
+			ploc(F.get_ploc());		
 		
-		for(size_t i=0;i<Ntot;++i)
-			dF[i]=data[i][0]*fac;
-	
-		return dF;
+		//compute derivative in Fourier space
+		for_xyz(i,j,k,nloc){
+			std::array<size_t,3> 
+				p{i+ploc[0],j+ploc[1],k+ploc[2]};
+				
+			data(i,j,k) *=  G*I*
+				( p[dir]<N[dir]/2 ? p[dir] : -1.0*(N[dir]-p[dir]));
+		}
+		
+		// transform backwards
+		FFT3D(data, std::complex<double> (cos(2*PI/N[0]),-sin(2*PI/N[0])));
+		for(size_t i=0;i<Ntot;++i)dF[i]=data[i].real();
+#endif
+		
+		dF *= fac;
+		return dF ;
 	}
 
 	void evolve(double dt){
