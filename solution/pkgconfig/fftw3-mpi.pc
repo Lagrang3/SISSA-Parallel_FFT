@@ -3,7 +3,7 @@ exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
 
-Name: FFTW-MPI
+Name: fftw3-mpi
 Description: fast Fourier transform library
 Version: 3.3.4
 Libs: -L${libdir} -lfftw3_mpi 
