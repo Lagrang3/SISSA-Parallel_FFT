@@ -71,6 +71,9 @@ class diffusion {
 	{
 		
 		auto conc_init = [&](double x,double y,double z){
+			/*
+				initial concentration: a spherical gaussian distribution
+			*/
 			double 
 				f1 = -sqr(x-L[0]/2),
 				f2 = -sqr(y-L[1]/2),
@@ -79,6 +82,9 @@ class diffusion {
 				(f1+f2+f3)/sqr(rad_conc));
 		};
 		auto diff_init = [&](double x,double y,double z){
+			/*
+				diffusion coefficient
+			*/
 			double 
 				f1 = -sqr(x-L[0]/2),
 				f2 = -sqr(y-L[1]/2),
