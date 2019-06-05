@@ -10,7 +10,9 @@ import matplotlib.pyplot as plt
 def plot(src,dest):
 	
 	f = open(src)
+	l1,l2 = f.readline().split()
 	n1,n2 = map(int,f.readline().split())
+	
 	
 	fig=plt.figure()
 	
@@ -22,6 +24,8 @@ def plot(src,dest):
 			dm[x][y]=float(l[y])
 	
 	plt.imshow(dm)
+	plt.xlabel(l2)
+	plt.ylabel(l1)
 	if dest=='':
 		plt.show()
 	else:

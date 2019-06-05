@@ -17,20 +17,16 @@ int main(int narg,char** args){
 	
 	D.initialize();
 	
-	if(com.rank()==com.size()/2){
-		ofstream("test_dif.dat")<<D.diffusivity;
-		ofstream("test_conc.dat")<<D.conc;}
-	
-	if(narg!=2)return 1;//no time-step provided!
-	const int nsteps=atoi(args[1]);
+	const int nsteps=100;
 	const double dt=2e-3; //time step for integration
+	const double eps = 1e-8;
 	
 	for(int t=0,fnum=0;t<nsteps;++t){
 			
 		D.evolve(dt);
-		if(t%50==0 and com.rank()==com.size()/2){
-			cout<<D.ss<<"\n";
-			ofstream("concentration_"+to_string(fnum++)+".dat")<<D;
+		if( abs(D.ss-1) > eps){	
+			cout<<"mass was not conserved: "<<D.ss<<endl;
+			return 1;
 		}
 	}
 	

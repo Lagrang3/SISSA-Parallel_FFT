@@ -35,6 +35,13 @@ on a complex array of *N=10^6* elements.
 This task is performed in 3.23 seconds using the `FFT_Iterative`,
 compared to 2.58 seconds employed by `FFTW3` (the FFTW wrapper).
 
+- Using the fftw library we manage to solve the diffusion equation for
+a small test domain of size 48x48x96. Here the concentration at
+time step 0 and time step 1000:
+
+![](./assets/t0.png)
+![](./assets/t1000.png)
+
 ## Compiling on Ulysses
 
 We provide a `meson.build` file for automatic dependency handling,

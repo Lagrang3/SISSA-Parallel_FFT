@@ -169,7 +169,7 @@ class diffusion {
 };
 
 std::ostream& operator << (std::ostream& O, const diffusion& D){
-	return O<<D.conc;
+	return O<<"y z\n"<<D.conc;
 }
 
 #endif
