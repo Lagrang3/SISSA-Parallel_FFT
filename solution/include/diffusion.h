@@ -9,6 +9,12 @@
 #include "parallel_buffer.h"
 #include <fftw3-mpi.h>
 
+#define for_xyz(i,j,k,nloc) \
+	for(size_t i=0;i<nloc[0];++i)\
+	for(size_t j=0;j<nloc[1];++j)\
+	for(size_t k=0;k<nloc[2];++k)
+
+
 inline double sqr(double x){return x*x;}
 
 
@@ -92,8 +98,7 @@ class diffusion {
 		
 		double ctot = conc.sum() * vol_cell ;
 		
-		for_xyz(i,j,k,nloc)
-			conc(i,j,k) /= ctot;
+		conc *= 1./ctot;
 		
 		ss = conc.sum() * vol_cell;
 	}
@@ -147,8 +152,7 @@ class diffusion {
 		parallel_buff_3D<double> dconc(com,N);
 		auto nloc=dconc.get_nloc();
 		
-		for_xyz(i,j,k,nloc)
-			dconc(i,j,k)=0;
+		dconc=0.0;
 		
 		for(int dir=0;dir<3;++dir){
 			auto aux = derivative(dir,conc);
