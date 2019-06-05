@@ -25,7 +25,8 @@ int main(int narg,char** args){
 			
 		D.evolve(dt);
 		if( abs(D.ss-1) > eps){	
-			cout<<"mass was not conserved: "<<D.ss<<endl;
+			cout.precision(10);
+			cout<<"mass was not conserved: "<<ios::fixed<<D.ss<<endl;
 			return 1;
 		}
 	}
