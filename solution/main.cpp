@@ -10,10 +10,11 @@ int main(int narg,char** args){
 	mpi_handler mpi;	
 	mpi_comm com = mpi.get_com();
 	
+	int nc=128;
 	
 	diffusion D(
 		mpi.get_com(),
-		48 /* nx */,48 /* ny */,96/* nz */);
+		nc /* nx */,nc /* ny */,nc/* nz */);
 	
 	D.initialize();
 	

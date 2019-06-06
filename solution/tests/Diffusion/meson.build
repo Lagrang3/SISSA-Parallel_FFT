@@ -14,9 +14,11 @@ _prefix=meson.current_source_dir()
 
 test('Diffusion with FFTW',
 	jury,
-	args: ['-np','4',test_fftw.full_path()])
+	args: ['-np','4',test_fftw.full_path()],
+	is_parallel: false)
 
 test('Diffusion with my FFT',
 	jury,
-	args: ['-np','4',test_myfft.full_path()])
+	args: ['-np','4',test_myfft.full_path()],
+	is_parallel: false)
 		

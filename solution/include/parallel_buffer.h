@@ -23,10 +23,10 @@ class parallel_buff_3D : public std::valarray<T> {
 	mpi_comm com;
 	std::array<size_t,3> N;
 	int r,q;
-	std::array<size_t,3> N_loc,start_loc;
 	
 	
 	public:
+	std::array<size_t,3> N_loc,start_loc;
 	
 	using std::valarray<T>::operator=;
 	using std::valarray<T>::operator*=;
@@ -75,15 +75,27 @@ class parallel_buff_3D : public std::valarray<T> {
 		std::valarray<T> tmp(get_local_size());
 		std::array<size_t,3> nloc{N_loc[2],N_loc[1],N_loc[0]};
 		
+		
 		for_xyz(i,j,k,N_loc)
 			tmp[_index(k,j,i,nloc)] = (*this)[_index(i,j,k,N_loc)];
 		
 		N_loc=nloc;
 		(*this)=std::move(tmp);
 		
-		
-		// todo: communication
 	}
+	void transpose_xy(){
+		std::valarray<T> tmp(get_local_size());
+		std::array<size_t,3> nloc{N_loc[1],N_loc[0],N_loc[2]};
+		
+		for_xyz(i,j,k,N_loc)
+			tmp[_index(j,i,k,nloc)] = (*this)[_index(i,j,k,N_loc)];
+			
+		N_loc=nloc;
+		(*this)=std::move(tmp);
+	}
+	void all_to_all();	
+	/* todo: mpi communication for template T */
+	void FFT3D(const T e,const T _1 = T(1));
 };
 
 template<class T>
@@ -109,28 +121,76 @@ double parallel_buff_3D<double>::sum()const{
 }
 
 template<class T>
-void FFT3D(parallel_buff_3D<T>& A,const T e,const T _1=T(1)){
+void parallel_buff_3D<T>::FFT3D(const T e,const T _1){
 	// FFT on z
-	auto nloc = A.get_nloc();
-	for(size_t i=0;i<nloc[0];++i)	
-	for(size_t j=0;j<nloc[1];++j)
-		FFT(&A(i,j,0),&A(i,j+1,0),e,_1);
+	for(size_t i=0;i<N_loc[0];++i)	
+	for(size_t j=0;j<N_loc[1];++j)
+		FFT(&(*this)(i,j,0),&(*this)(i,j+1,0),e,_1);
 	
 	// FFT on y
-	A.transpose_yz();
-	nloc = A.get_nloc();
-	for(size_t i=0;i<nloc[0];++i)	
-	for(size_t j=0;j<nloc[1];++j)
-		FFT(&A(i,j,0),&A(i,j+1,0),e,_1);
-	A.transpose_yz();
+	transpose_yz();
+	for(size_t i=0;i<N_loc[0];++i)	
+	for(size_t j=0;j<N_loc[1];++j)
+		FFT(&(*this)(i,j,0),&(*this)(i,j+1,0),e,_1);
+	transpose_yz();
 	
 	// FFT on x
-	A.transpose_xz();
-	nloc = A.get_nloc();
-	for(size_t i=0;i<nloc[0];++i)	
-	for(size_t j=0;j<nloc[1];++j)
-		FFT(&A(i,j,0),&A(i,j+1,0),e,_1);
-	A.transpose_xz();
+	transpose_xz();
+	all_to_all();
+	N_loc[0]/=com.size(), N_loc[1] *= com.size();
+	transpose_xy();
+	N_loc[1] /= com.size(), N_loc[2] *= com.size();
+	
+	for(size_t i=0;i<N_loc[0];++i)	
+	for(size_t j=0;j<N_loc[1];++j)
+		FFT(&(*this)(i,j,0),&(*this)(i,j+1,0),e,_1);
+	
+	N_loc[2] /= com.size(), N_loc[1] *= com.size();
+	transpose_xy();	
+	N_loc[1]/=com.size(), N_loc[0] *= com.size();
+	all_to_all();
+	transpose_xz();
+		
 }
+
+template<>
+	void parallel_buff_3D< std::complex<double> >::all_to_all(){
+		int Ntot = get_local_size();
+		
+		std::unique_ptr< double[] > 
+			sendbuf{new double[2*Ntot]}, 
+			recvbuf{new double[2*Ntot]};
+			
+		for(size_t i=0;i<Ntot;++i)
+			sendbuf[2*i]=(*this)[i].real(),
+			sendbuf[2*i+1]=(*this)[i].imag();
+		
+		
+		MPI_Alltoall(sendbuf.get(),2*Ntot/com.size(),
+			MPI_DOUBLE,recvbuf.get(),2*Ntot/com.size(),
+			MPI_DOUBLE,com.get_com());
+		
+		for(size_t i=0;i<Ntot;++i)
+			(*this)[i]= std::complex<double> { recvbuf[2*i], recvbuf[2*i+1]};
+	}
+template<>
+	void parallel_buff_3D<int>::all_to_all(){
+		int Ntot = get_local_size();
+		
+		std::unique_ptr< int[] > 
+			sendbuf{new int[Ntot]}, 
+			recvbuf{new int[Ntot]};
+			
+		for(size_t i=0;i<Ntot;++i)
+			sendbuf[i]=(*this)[i];
+		
+		
+		MPI_Alltoall(sendbuf.get(),Ntot/com.size(),
+			MPI_INT,recvbuf.get(),Ntot/com.size(),
+			MPI_INT,com.get_com());
+		
+		for(size_t i=0;i<Ntot;++i)
+			(*this)[i]= recvbuf[i];
+	}
 
 #endif

@@ -160,7 +160,7 @@ class diffusion {
 		// transform forwards
 		parallel_buff_3D< std::complex<double>  > data(com,N);
 		for(size_t i=0;i<Ntot;++i)data[i] = F[i];
-		FFT3D(data, std::complex<double> (cos(2*PI/N[0]),sin(2*PI/N[0])));
+		data.FFT3D(std::complex<double> (cos(2*PI/N[0]),-sin(2*PI/N[0])));
 		
 		std::array<size_t,3> 
 			nloc(F.get_nloc()),
@@ -176,7 +176,7 @@ class diffusion {
 		}
 		
 		// transform backwards
-		FFT3D(data, std::complex<double> (cos(2*PI/N[0]),-sin(2*PI/N[0])));
+		data.FFT3D(std::complex<double> (cos(2*PI/N[0]),sin(2*PI/N[0])));
 		for(size_t i=0;i<Ntot;++i)dF[i]=data[i].real();
 #endif
 		
@@ -187,8 +187,6 @@ class diffusion {
 	void evolve(double dt){
 		
 		parallel_buff_3D<double> dconc(com,N);
-		auto nloc=dconc.get_nloc();
-		
 		dconc=0.0;
 		
 		for(int dir=0;dir<3;++dir){

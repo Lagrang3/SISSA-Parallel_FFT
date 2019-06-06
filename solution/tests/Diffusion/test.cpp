@@ -6,7 +6,7 @@
 using namespace std;
 
 
-int main(int narg,char** args){
+int main(){
 	mpi_handler mpi;	
 	mpi_comm com = mpi.get_com();
 	
@@ -22,12 +22,12 @@ int main(int narg,char** args){
 	const double dt=2e-3; //time step for integration
 	const double eps = 1e-8;
 	
-	for(int t=0,fnum=0;t<nsteps;++t){
+	for(int t=0;t<nsteps;++t){
 			
 		D.evolve(dt);
 		if( abs(D.ss-1) > eps){	
 			cout.precision(10);
-			cout<<"mass was not conserved: "<<ios::fixed<<D.ss<<endl;
+			cout<<"step: "<<t<<" mass was not conserved: "<<ios::fixed<<D.ss<<endl;
 			return 1;
 		}
 	}
