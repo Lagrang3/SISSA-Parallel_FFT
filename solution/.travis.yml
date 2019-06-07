@@ -1,0 +1,1 @@
+script: meson build && cd build && ninja test

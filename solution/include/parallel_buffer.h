@@ -93,6 +93,22 @@ class parallel_buff_3D : public std::valarray<T> {
 		N_loc=nloc;
 		(*this)=std::move(tmp);
 	}
+	
+	void transpose_reorder(){
+		size_t nproc = com.size();
+		
+		std::valarray<T> tmp(get_local_size());
+		std::array<size_t,3> nloc{N_loc[0]/nproc,N_loc[1],N_loc[2]*nproc};
+		
+		for_xyz(x,y,z,N_loc){
+			size_t p = x/nloc[0], i=x%nloc[0],j=y,k=z+p*N_loc[2];
+			tmp[_index(i,j,k,nloc)]=(*this)[_index(x,y,z,N_loc)];
+		}
+		
+		N_loc =nloc;
+		(*this)=std::move(tmp);
+	}
+	
 	void all_to_all();	
 	/* todo: mpi communication for template T */
 	void FFT3D(const T e,const T _1 = T(1));
@@ -137,19 +153,15 @@ void parallel_buff_3D<T>::FFT3D(const T e,const T _1){
 	// FFT on x
 	transpose_xz();
 	all_to_all();
-	N_loc[0]/=com.size(), N_loc[1] *= com.size();
-	transpose_xy();
-	N_loc[1] /= com.size(), N_loc[2] *= com.size();
+	transpose_reorder();
 	
 	for(size_t i=0;i<N_loc[0];++i)	
 	for(size_t j=0;j<N_loc[1];++j)
 		FFT(&(*this)(i,j,0),&(*this)(i,j+1,0),e,_1);
-	
-	N_loc[2] /= com.size(), N_loc[1] *= com.size();
-	transpose_xy();	
-	N_loc[1]/=com.size(), N_loc[0] *= com.size();
-	all_to_all();
 	transpose_xz();
+	all_to_all();
+	transpose_reorder();
+	
 		
 }
 

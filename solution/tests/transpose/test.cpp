@@ -6,7 +6,7 @@
 using namespace std;
 int r;
 
-valarray<int> tmp,xy,xz,yz,alltoall,xz_alltoall,xz_alltoall_xy;
+valarray<int> tmp,xy,xz,yz,alltoall,xz_alltoall,xz_alltoall_xy,xz_alltoall_reorder;
 
 int cmp(const parallel_buff_3D<int>& A,const valarray<int>& B){
 	int n = A.size(),m=B.size();
@@ -135,6 +135,17 @@ int main(int narg,char** args){
 			0x231,0x331
 			
 		};
+		xz_alltoall_reorder = valarray<int>{
+			0x000,0x100,0x200,0x300,
+			0x010,0x110,0x210,0x310,
+			0x020,0x120,0x220,0x320,
+			0x030,0x130,0x230,0x330,
+			
+			0x001,0x101,0x201,0x301,
+			0x011,0x111,0x211,0x311,
+			0x021,0x121,0x221,0x321,
+			0x031,0x131,0x231,0x331
+		};
 		yz = valarray<int>{
 			0x000,0x010,0x020,0x030,
 			0x001,0x011,0x021,0x031,	
@@ -187,6 +198,17 @@ int main(int narg,char** args){
 			0x230,0x231,0x232,0x233,
 			0x330,0x331,0x332,0x333
 			
+		};
+		xz_alltoall_reorder = valarray<int>{
+			0x002,0x102,0x202,0x302,
+			0x012,0x112,0x212,0x312,
+			0x022,0x122,0x222,0x322,
+			0x032,0x132,0x232,0x332,
+			
+			0x003,0x103,0x203,0x303,
+			0x013,0x113,0x213,0x313,
+			0x023,0x123,0x223,0x323,
+			0x033,0x133,0x233,0x333
 		};
 		xz_alltoall_xy = valarray<int>{
 			0x002,0x102,
@@ -299,33 +321,19 @@ int main(int narg,char** args){
 		A.all_to_all();
 		return cmp(A,xz_alltoall);
 		
-	}else if(s=="xz_alltoall_xy"){
+	}else if(s=="xz_alltoall_reorder"){
 		A.transpose_xz();
 		A.all_to_all();
-		auto nloc = A.get_nloc();
-		swap(nloc[0],nloc[1]);
-		nloc[1]*=com.size(), nloc[0]/=com.size();
-		A.N_loc = nloc;
-		A.transpose_xy();
-		return cmp(A,xz_alltoall_xy);
-	}else if(s=="id"){
+		A.transpose_reorder();
+		return cmp(A,xz_alltoall_reorder);
+	}else if(s=="back"){
 		A.transpose_xz();
 		A.all_to_all();
-		auto nloc = A.get_nloc();
-		swap(nloc[0],nloc[1]);
-		nloc[1]*=com.size(), nloc[0]/=com.size();
-		A.N_loc = nloc;
-		A.transpose_xy();
+		A.transpose_reorder();
 		
-		A.transpose_xy();
-		nloc = A.get_nloc();
-		nloc[0]*=com.size(), nloc[1]/=com.size();
-		swap(nloc[0],nloc[1]);
-		A.N_loc = nloc;
-		A.all_to_all();
 		A.transpose_xz();
-		
-		
+		A.all_to_all();
+		A.transpose_reorder();
 		
 		return cmp(A,tmp);
 		
