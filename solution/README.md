@@ -45,8 +45,8 @@ that regards its own data.
 a small test domain of size 48x48x96. Here the concentration at
 time step 0 and time step 1000:
 
-![](./assets/t0.png)
-![](./assets/t1000.png)
+![](./assets/t0.png "Concentration at t=0, y-z slice.")
+![](./assets/t1000.png "Concentration at t=1000, y-z slice, using FFTW3.")
 
 - We have implemented a parallel 3-dimensional Fast Fourier Transform
 as a public function of the `parallel_buff_3D` class.
@@ -58,12 +58,12 @@ an example of the 3-dimensional diffusion problem
 for a box of size 64x64x128 at time step 0 and 10000
 computed with our 3D FFT:
 
-![](./assets/t0_xy.png)
-![](./assets/t0_xz.png)
-![](./assets/t0_yz.png)
-![](./assets/t10000_xy.png)
-![](./assets/t10000_xz.png)
-![](./assets/t10000_yz.png)
+![](./assets/t0_xy.png "Concentration at t=0, using my 3D FFT.")
+![](./assets/t0_xz.png "Concentration at t=0, using my 3D FFT.")
+![](./assets/t0_yz.png "Concentration at t=0, using my 3D FFT.")
+![](./assets/t10000_xy.png "Concentration at t=10000, using my 3D FFT.")
+![](./assets/t10000_xz.png "Concentration at t=10000, using my 3D FFT.")
+![](./assets/t10000_yz.png "Concentration at t=10000, using my 3D FFT.")
 
 - Here we present the results of the benchmarks,
 for different box sizes: 256^3, 512^3 and 1024^3,
