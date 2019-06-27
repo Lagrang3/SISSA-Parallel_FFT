@@ -1,0 +1,6 @@
+{  "method":  "myFFT"  , "np": 2 , "Nx": 256 , "Ny": 256 , "Nz": 256 , "dT": 1e-06 , "results": [ 
+{ "step": "0" , "matter": "1" , "time": "27839" } ,
+{ "step": "1" , "matter": "1" , "time": "27717" } ,
+{ "step": "2" , "matter": "1" , "time": "27705" } ,
+{ "step": "3" , "matter": "1" , "time": "27909" } ,
+{ "step": "4" , "matter": "1" , "time": "27702" }  ] } 

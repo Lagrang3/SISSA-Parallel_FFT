@@ -29,9 +29,13 @@ class parallel_buff_3D : public std::valarray<T> {
 		std::valarray<T> tmp(get_local_size());
 		std::array<size_t,3> nloc{N_loc[0]/nproc,N_loc[1],N_loc[2]*nproc};
 		
+		N_loc[0]/=nproc;
+		size_t offset = N_loc[0]*N_loc[1]*N_loc[2];
+		for(size_t p =0;p<nproc;++p)
 		for_xyz(x,y,z,N_loc){
-			size_t p = x/nloc[0], i=x%nloc[0],j=y,k=z+p*N_loc[2];
-			tmp[_index(i,j,k,nloc)]=(*this)[_index(x,y,z,N_loc)];
+			
+			size_t i=x,j=y,k=z+p*N_loc[2];
+			tmp[_index(i,j,k,nloc)]=(*this)[_index(x,y,z,N_loc)+offset*p];
 		}
 		
 		N_loc =nloc;
@@ -77,11 +81,16 @@ class parallel_buff_3D : public std::valarray<T> {
 		return (*this)[ _index(x,y,z,N_loc)  ];
 	}
 	
+	auto get_N()const{return N;}
 	auto get_nloc()const{return N_loc;}
 	auto get_ploc()const{return start_loc;}
 	
 	MPI_Comm get_com()const{
 		return com.get_com();
+	}
+	
+	mpi_comm get_comm()const{
+		return com;
 	}
 	
 	size_t get_local_size()const{
@@ -96,9 +105,6 @@ class parallel_buff_3D : public std::valarray<T> {
 		for_xyz(i,j,k,N_loc)
 			tmp[_index(i,k,j,nloc)] = (*this)[_index(i,j,k,N_loc)];
 		
-		
-		
-		N_loc=nloc;
 		(*this)=std::move(tmp);
 		std::swap(N[1],N[2]);
 		compute_start_loc();
@@ -126,7 +132,7 @@ class parallel_buff_3D : public std::valarray<T> {
 	}
 	
 	/* todo: mpi communication for template T */
-	void FFT3D(const T e,const T _1 = T(1));
+	void FFT3D(const std::array<T,3> e,const T _1 = T(1));
 	
 	void report(const char* filename);
 };
@@ -244,25 +250,24 @@ double parallel_buff_3D<double>::sum()const{
 }
 
 template<class T>
-void parallel_buff_3D<T>::FFT3D(const T e,const T _1){
+void parallel_buff_3D<T>::FFT3D(const std::array<T,3> e,const T _1){
 	// FFT on z
 	for(size_t i=0;i<N_loc[0];++i)	
 	for(size_t j=0;j<N_loc[1];++j)
-		FFT(&(*this)(i,j,0),&(*this)(i,j+1,0),e,_1);
+		FFT(&(*this)(i,j,0),&(*this)(i,j+1,0),e[2],_1);
 	
 	// FFT on y
 	transpose_yz();
 	for(size_t i=0;i<N_loc[0];++i)	
 	for(size_t j=0;j<N_loc[1];++j)
-		FFT(&(*this)(i,j,0),&(*this)(i,j+1,0),e,_1);
+		FFT(&(*this)(i,j,0),&(*this)(i,j+1,0),e[1],_1);
 	transpose_yz();
 	
 	// FFT on x
 	transpose_xz();
-	
 	for(size_t i=0;i<N_loc[0];++i)	
 	for(size_t j=0;j<N_loc[1];++j)
-		FFT(&(*this)(i,j,0),&(*this)(i,j+1,0),e,_1);
+		FFT(&(*this)(i,j,0),&(*this)(i,j+1,0),e[0],_1);
 	transpose_xz();
 	
 		

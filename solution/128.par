@@ -1,0 +1,7 @@
+ Nx = 64
+Ny = 64
+Nz=   128
+dT=  0.001
+Nsteps = 10000
+tlimit = 60
+output = yes

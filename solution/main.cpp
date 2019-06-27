@@ -31,6 +31,7 @@ struct param
 {
 	int Nx,Ny,Nz,Nsteps,tlimit;
 	double dT;
+	bool output=false;
 	
 	param(const char* filename)
 	{
@@ -47,6 +48,7 @@ struct param
 			if( a=="Nsteps")Nsteps = stoi(b);
 			if( a=="tlimit")tlimit=stoi(b);
 			if( a=="dT")	dT=stof(b);
+			if( a=="output") output = b=="yes";
 		}
 	}
 };
@@ -139,7 +141,8 @@ int main(int narg,char** args){
 	
 	D.initialize();
 	
-	//D.conc.report("concentration_initial.dat");
+	if(P.output)
+		D.conc.report("concentration_initial.dat");
 	
 	report R( com, P ); // process 0 reports
 	
@@ -160,7 +163,8 @@ int main(int narg,char** args){
 		MPI_Bcast(&td,1,MPI_INT,0,com.get_com());	
 		if(td>P.tlimit)break;
 	}
-	//D.conc.report("concentration_final.dat");
+	if(P.output)
+		D.conc.report("concentration_final.dat");
 	
 
 	return 0;

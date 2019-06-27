@@ -2,6 +2,8 @@
 
 import json,os,click
 import matplotlib.pyplot as plt
+import matplotlib
+import numpy as np
 
 @click.group()
 def cli():
@@ -38,11 +40,11 @@ def cli_list():
 
 
 
-@cli.command('plot')
-@click.option('--x',prompt="size of x",help="Number of cells in X",type=int)
-@click.option('--y',prompt="size of y",help="Number of cells in X",type=int)
-@click.option('--z',prompt="size of z",help="Number of cells in X",type=int)
-def cli_plot(x,y,z):
+@cli.command('plot-bench')
+@click.option('-x',prompt="size of x",help="Number of cells in X",type=int)
+@click.option('-y',prompt="size of y",help="Number of cells in X",type=int)
+@click.option('-z',prompt="size of z",help="Number of cells in X",type=int)
+def cli_plot_bench(x,y,z):
 	'''Plots a comparison of methods FFTW and myFFT \
 for a given size of the domain.'''
 	
@@ -74,7 +76,8 @@ for a given size of the domain.'''
 							tp[1]+=float(r['time'])
 							tp[2]+=1
 	plt.figure()
-	
+	plt.xscale('log',basex=2)
+	plt.xticks([ 2**i for i in range(1,8)])
 	for name in mydata:
 		xx=[]
 		yy=[]
@@ -83,16 +86,51 @@ for a given size of the domain.'''
 		d.sort()
 		
 		for i in d:
-			xx.append(i[0])
-			yy.append(i[1]/i[2])
+			if i[2]>0:
+				yval = i[1]/i[2]/1000
+				xval = i[0]
+				yy.append(yval)
+				xx.append(xval)
+				plt.annotate( "%.1f" % yval ,xy=(xval,yval))
+				
 		
 		plt.plot(xx,yy,'o-',label=name)
 	plt.xlabel('processes')
-	plt.ylabel('time per iteration (ms)')
+	plt.ylabel('time per iteration (s)')
 	plt.title( 'Size = (%d,%d,%d)' % (x,y,z) )
 	plt.legend()
 	plt.show()
 	
+@cli.command('plot-data')
+@click.argument('src')
+@click.option('--dest',default='')
+def cli_plot_data(src,dest):
+	'''Plots a snapshot of the concentration.'''
+	
+	f = open(src)
+	
+	for i in range(3):	
+		l1,l2 = f.readline().split()
+		n1,n2 = map(int,f.readline().split())
+		
+		
+		fig=plt.figure()
+		
+		dm=np.ndarray(shape=(n1,n2))
+		
+		for x in range(n1):
+			l=f.readline().split()
+			for y in range(n2):
+				dm[x][y]=float(l[y])
+		
+		plt.imshow(dm)
+		plt.xlabel(l2)
+		plt.ylabel(l1)
+		if dest=='':
+			plt.show()
+		else:
+			plt.savefig(dest+"_"+l1+l2+".png")
+				
 
 if 	__name__ == "__main__":
 	cli()

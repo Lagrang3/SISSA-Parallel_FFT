@@ -2,6 +2,10 @@ test_trans=executable('test_trans',['test.cpp'],
 	include_directories: [inc],
 	dependencies: [mpi_dep])
 
+#show=executable('show',['show.cpp'],
+#	include_directories: [inc],
+#	dependencies: [mpi_dep])
+
 jury=find_program('mpirun')
 
 _prefix=meson.current_source_dir()

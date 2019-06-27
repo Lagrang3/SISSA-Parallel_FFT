@@ -1,0 +1,6 @@
+{  "method":  "FFTW"  , "np": 32 , "Nx": 512 , "Ny": 512 , "Nz": 512 , "dT": 1e-06 , "results": [ 
+{ "step": "0" , "matter": "1" , "time": "20322" } ,
+{ "step": "1" , "matter": "1" , "time": "20155" } ,
+{ "step": "2" , "matter": "1" , "time": "20226" } ,
+{ "step": "3" , "matter": "1" , "time": "20236" } ,
+{ "step": "4" , "matter": "1" , "time": "20184" }  ] } 

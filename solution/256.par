@@ -1,0 +1,6 @@
+ Nx = 256
+Ny = 256
+Nz=   256
+dT=  1e-6  
+Nsteps = 5
+tlimit = 60

@@ -1,0 +1,6 @@
+ Nx = 1024
+Ny = 1024
+Nz=   1024
+dT=  1e-6  
+Nsteps = 5
+tlimit = 60
