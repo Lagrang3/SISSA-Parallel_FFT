@@ -97,7 +97,7 @@ class diffusion {
 				f1 = -sqr(x-L[0]/2),
 				f2 = -sqr(y-L[1]/2),
 				f3 = -sqr(z-L[2]/2);
-			return exp( (f1+std::max(f2,f3))/sqr(rad_diff));
+			return exp( (f2+std::max(f1,f3))/sqr(rad_diff));
 		};
 		auto nloc = conc.get_nloc(),ploc=conc.get_ploc();
 		
@@ -117,7 +117,8 @@ class diffusion {
 		ss = conc.sum() * vol_cell;
 	}
 
-	parallel_buff_3D<double> derivative(int dir,const parallel_buff_3D<double>& F){
+	parallel_buff_3D<double> derivative(int dir,const parallel_buff_3D<double>& F)
+	{
 		
 		const std::complex<double> I{0,1};
 		const double G = 2*PI/L[dir];
@@ -128,17 +129,20 @@ class diffusion {
 		
 #ifdef FFTW	
 		// transform forwards
-		for(size_t i=0;i<Ntot;++i){
+		for(size_t i=0;i<Ntot;++i)
+		{
 			data[i][0]=F[i];
 			data[i][1]=0;
 		}
+		
 		std::array<size_t,3> 
 			nloc{fftw_nloc,fftw_N[1],fftw_N[2]},
 			ploc{fftw_ploc,0,0};		
 		fftw_execute(fplan);
 		
 		//compute derivative in Fourier space
-		for_xyz(i,j,k,nloc){
+		for_xyz(i,j,k,nloc)
+		{
 			std::array<size_t,3> 
 				p{i+ploc[0],j+ploc[1],k+ploc[2]};
 				
@@ -155,7 +159,8 @@ class diffusion {
 		// transform backwards
 		fftw_execute(bplan);		
 		for(size_t i=0;i<Ntot;++i)dF[i]=data[i][0];
-#else
+		
+#else // Use my FFT
 		
 		// transform forwards
 		parallel_buff_3D< std::complex<double>  > data(com,N);
@@ -167,7 +172,8 @@ class diffusion {
 			ploc(F.get_ploc());		
 		
 		//compute derivative in Fourier space
-		for_xyz(i,j,k,nloc){
+		for_xyz(i,j,k,nloc)
+		{
 			std::array<size_t,3> 
 				p{i+ploc[0],j+ploc[1],k+ploc[2]};
 				
@@ -184,12 +190,13 @@ class diffusion {
 		return dF ;
 	}
 
-	void evolve(double dt){
-		
+	void evolve(double dt)
+	{
 		parallel_buff_3D<double> dconc(com,N);
 		dconc=0.0;
 		
-		for(int dir=0;dir<3;++dir){
+		for(int dir=0;dir<3;++dir)
+		{
 			auto aux = derivative(dir,conc);
 		
 			aux *= diffusivity;
@@ -204,11 +211,7 @@ class diffusion {
 		ss = conc.sum() * vol_cell;
 	}
 	
-	friend std::ostream& operator << (std::ostream&, const diffusion&);
 };
 
-std::ostream& operator << (std::ostream& O, const diffusion& D){
-	return O<<"y z\n"<<D.conc;
-}
 
 #endif

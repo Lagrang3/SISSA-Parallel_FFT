@@ -54,5 +54,6 @@ this directory. Thus the compilations steps on Ulysses are:
 - load fftw module: `module load fftw/3.3.4/gnu/4.9.2`;
 - make our pkgconfig visible: `export PKG_CONFIG_PATH=$(pwd)/pkgconfig:$PKG_CONFIG_PATH`;
 - autoconfigure and compile: `meson build && cd build && ninja`.
+- run tests `ninja test` to check the integrity of the library.
 
 

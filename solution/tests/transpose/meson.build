@@ -5,7 +5,7 @@ test_trans=executable('test_trans',['test.cpp'],
 jury=find_program('mpirun')
 
 _prefix=meson.current_source_dir()
-_tests=['xy','xz','yz','alltoall','xz_alltoall','xz_alltoall_reorder','back']
+_tests=['xz','yz']
 
 
 foreach _t : _tests
